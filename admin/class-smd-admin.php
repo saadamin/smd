@@ -99,5 +99,81 @@ class Smd_Admin {
 		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/smd-admin.js', array( 'jquery' ), $this->version, false );
 
 	}
+	//This function is used to add a metabox to the category taxonomy
+	public function cmb2_add_metabox() {
 
+		$prefix = '_smd_';
+	
+		$cmb = new_cmb2_box( array(
+			'id'           => $prefix . 'add_an_image',
+			'title'        => __( 'add an image', 'cmd' ),
+			'object_types'     => array( 'term' ), // Tells CMB2 to use term_meta vs post_meta
+			'taxonomies'       => array( 'category' ), // Tells CMB2 which taxonomies should have these fields
+			'context'      => 'advanced',
+			'priority'     => 'high',
+		) );
+	
+		$cmb->add_field( array(
+			'name'    => 'Image',
+			'desc'    => 'Upload an image',
+			'id'      => 'test_image',
+			'type'    => 'file',
+			// Optional:
+			'options' => array(
+				'url' => false, // Hide the text input for the url
+			),
+			'text' => array(
+				'add_upload_files_text' => 'Add an image', // default: "Add or Upload Files"
+				'remove_image_text' => 'Remove an image', // default: "Remove Image"
+				'file_text' => 'Image', // default: "File:"
+				'remove_text' => 'Replace image', // default: "Remove"
+			),
+			// query_args are passed to wp.media's library query.
+			'query_args' => array(
+				'type' => array(
+					'image/jpeg',
+					'image/png',
+				),
+			),
+			'preview_size' => 'large', // Image size to use when previewing in the admin.
+		)  );
+	
+	}
+	//This function is used to add a metabox to the post type
+	private function check_for_content_usage($post_id) {
+		$post_content = get_post($post_id)->post_content;
+		$media_ids = get_attached_media('image', $post_id);
+		foreach($media_ids as $media) {
+		  $media_url = wp_get_attachment_url($media->ID);
+		  if(strpos($post_content, $media_url) !== false) {
+			return true;
+		  }
+		}
+		return false;
+	  }
+
+	   /**
+	   	* Prevent the deletion of an image if it is being used as a Featured Image in an article:
+		* To achieve this, you can use the 'delete_attachment' filter to check if the image is being used as a
+ 		* featured image in any posts. If it is, you can prevent the deletion by returning a custom error message.
+		*/
+
+	  public function prevent_featured_image_deletion($post_id) {
+		$attachment_id = get_post_thumbnail_id($post_id);
+		if (!empty($attachment_id)) {
+		  // Check if attachment is being used as a featured image
+		  $posts = get_posts(array(
+			'meta_key' => '_thumbnail_id',
+			'meta_value' => $attachment_id,
+			'post_type' => 'any',
+			'post_status' => 'publish,private,draft',
+			'posts_per_page' => -1
+		  ));
+		  if (!empty($posts)) {
+			wp_die(__('This image is being used as a featured image in one or more posts. Please remove the featured image before deleting this image.'));
+		  }
+		}
+	  }
+	  
+	
 }

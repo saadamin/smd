@@ -151,14 +151,18 @@ class Smd {
 	 * @access   private
 	 */
 	private function define_admin_hooks() {
+			require_once  __DIR__. '/cmb2/init.php';
+			$plugin_admin = new Smd_Admin( $this->get_plugin_name(), $this->get_version() );
 
-		$plugin_admin = new Smd_Admin( $this->get_plugin_name(), $this->get_version() );
-
-		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
-		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
-
+			$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
+			$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
+			add_action( 'cmb2_admin_init', array($plugin_admin,'cmb2_add_metabox') );
+			add_action('delete_attachment', array($plugin_admin,'prevent_featured_image_deletion'));
 	}
 
+
+	  
+	  
 	/**
 	 * Register all of the hooks related to the public-facing functionality
 	 * of the plugin.

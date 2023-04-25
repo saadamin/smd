@@ -8,13 +8,13 @@
  * registers the activation and deactivation functions, and defines a function
  * that starts the plugin.
  *
- * @link              https://www.saadamin.com
+ * @link              https://github.com/saadamin/smd
  * @since             1.0.0
  * @package           Smd
  *
  * @wordpress-plugin
  * Plugin Name:       Safe Media Delete
- * Plugin URI:        https://www.saadamin.com
+ * Plugin URI:        https://github.com/saadamin/smd
  * Description:       Develop a WordPress plugin which adds the some features in WP Admin
  * Version:           1.0.0
  * Author:            Saad Amin
