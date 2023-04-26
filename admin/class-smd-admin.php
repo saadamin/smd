@@ -139,18 +139,6 @@ class Smd_Admin {
 		)  );
 	
 	}
-	//This function is used to add a metabox to the post type
-	private function check_for_content_usage($post_id) {
-		$post_content = get_post($post_id)->post_content;
-		$media_ids = get_attached_media('image', $post_id);
-		foreach($media_ids as $media) {
-		  $media_url = wp_get_attachment_url($media->ID);
-		  if(strpos($post_content, $media_url) !== false) {
-			return true;
-		  }
-		}
-		return false;
-	  }
 
 	   /**
 	   	* Prevent the deletion of an image if it is being used as a Featured Image in an article:
@@ -173,9 +161,9 @@ class Smd_Admin {
 		);
 		$query = new WP_Query($args);
 		if ($query->have_posts()) {
-			if($return) {
+			if($return) {//return the html only when the function is called from the add_image_details_link function
 				foreach($query->posts as $result) {
-					$html .= '<a href="'.get_edit_post_link($result->ID).'">'.$result->ID.'</a>&nbsp;,';
+					$html .= '&nbsp;<a type="featured_image" href="'.get_edit_post_link($result->ID).'">'.$result->ID.'</a>,';
 				}
 				return $html;
 			}
@@ -192,41 +180,26 @@ class Smd_Admin {
 		global $wpdb;
 	
 		// Define the termmeta table name
-		$termmeta_table = $wpdb->prefix . 'posts';
+		$post_table = $wpdb->prefix . 'posts';
 
 		// Query the termmeta table for the search value
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM $termmeta_table WHERE post_type IN ( %s , %s ) AND post_content LIKE %s",
+				"SELECT * FROM $post_table WHERE post_type IN ( %s , %s ) AND post_content LIKE %s",
 				array('post','page','%' . $wpdb->esc_like( $attachment_url ) . '%')
 			)
 		);
 		
 		if ($results ) {
-			if($return) {
+			if($return) {//return the html only when the function is called from the add_image_details_link function
 				foreach($results as $result) {
-					$html .= '<a href="'.get_edit_post_link($result->ID).'">'.$result->ID.'</a>&nbsp;,';
+					$html .= '&nbsp;<a type="post_content" href="'.get_edit_post_link($result->ID).'">'.$result->ID.'</a>,';
 				}
 				return $html;
 			}
 			wp_send_json_error(__('This image is being used as a content in one or more posts. Please remove the content image before deleting this image.'));
 		}
 	}
-	
-	public function add_image_details_link($form_fields, $post) {
-		
-		$html = $this->prevent_featured_image_deletion($post->ID,true);
-		$html .= $this->prevent_post_content_image_deletion($post->ID,true);
-		// $html. = $this->prevent_term_image_deletion($post->ID,true);
-			$form_fields['image_details_link'] = array(
-				'label' => 'Linked Articles',
-				'input' => 'html',
-				// 'html' => "<a href='$image_details_link'>$post->ID</a><a href='$image_details_link'>$post->ID</a>"
-				'html' => rtrim($html, ',')
-			);
-		return $form_fields;
-	}
-	
 	//Prevent the deletion of an image if it is being used in a Term
 	public function prevent_term_image_deletion($attachment_id , $return = false, $html ='') {
 		$attachment_url = wp_get_attachment_url( $attachment_id );
@@ -239,13 +212,14 @@ class Smd_Admin {
 		// Query the termmeta table for the search value
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM $termmeta_table WHERE meta_key LIKE %s AND meta_value = %s",
+				"SELECT term_id FROM $termmeta_table WHERE meta_key = %s AND meta_value LIKE %s",
 				'test_image','%' . $wpdb->esc_like( $attachment_url ) . '%'
 			)
 		);
+		$b=$wpdb->last_query;
 		if($return) {//return the html only when the function is called from the add_image_details_link function
 			foreach($results as $result) {
-				$html .= '<a href="'.get_edit_term_link($result->term_id).'">'.$result->term_id.'</a>&nbsp;,'; 
+				$html .= '&nbsp;<a type="term" href="'.get_edit_term_link($result->term_id).'">'.$result->term_id.'</a>,'; 
 			}
 			return $html;
 		}
@@ -253,6 +227,30 @@ class Smd_Admin {
 			wp_send_json_error(__('This image is being used as a term.'));
 		}
 	}
+	public function add_image_details_link($form_fields, $post) {
+		$html = $this->get_html_of_linked_object($post->ID);
+			$form_fields['image_details_link'] = array(
+				'label' => 'Linked Articles',
+				'input' => 'html',
+				'html' => $html
+			);
+		return $form_fields;
+	}
 	
+	public 	function add_image_linked_object_column($columns) {
+		$columns['image_linked_object'] = 'Linked Object';
+		return $columns;
+	}
 	
+	public function image_linked_object_column_content($column_name, $attachment_id) {
+		if ($column_name == 'image_linked_object') {
+			echo 'Articles<br>'.$this->get_html_of_linked_object($attachment_id);
+		}
+	}
+	private function get_html_of_linked_object($attachment_id){
+		$html = $this->prevent_featured_image_deletion($attachment_id,true);
+		$html .= $this->prevent_post_content_image_deletion($attachment_id,true);
+		$html .= $this->prevent_term_image_deletion($attachment_id,true);
+		return rtrim($html, ',');
+	}
 }

@@ -161,8 +161,8 @@ class Smd {
 			add_action('delete_attachment', array($plugin_admin,'prevent_post_content_image_deletion'));
 			add_action('delete_attachment', array($plugin_admin,'prevent_term_image_deletion'));
 			add_filter('attachment_fields_to_edit', array($plugin_admin,'add_image_details_link'), 10, 2);
-			
-			
+			add_filter('manage_media_columns', array($plugin_admin,'add_image_linked_object_column'));
+			add_action('manage_media_custom_column', array($plugin_admin,'image_linked_object_column_content'), 10, 2);
 	}
 
 
