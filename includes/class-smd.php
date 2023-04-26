@@ -158,8 +158,15 @@ class Smd {
 			$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
 			add_action( 'cmb2_admin_init', array($plugin_admin,'cmb2_add_metabox') );
 			add_action('delete_attachment', array($plugin_admin,'prevent_featured_image_deletion'));
+			add_action('delete_attachment', array($plugin_admin,'prevent_post_content_image_deletion'));
+			add_action('delete_attachment', array($plugin_admin,'prevent_term_image_deletion'));
+			add_filter('attachment_fields_to_edit', array($plugin_admin,'add_image_details_link'), 10, 2);
+			
+			
 	}
 
+
+	
 
 	  
 	  

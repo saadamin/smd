@@ -158,22 +158,101 @@ class Smd_Admin {
  		* featured image in any posts. If it is, you can prevent the deletion by returning a custom error message.
 		*/
 
-	  public function prevent_featured_image_deletion($post_id) {
-		$attachment_id = get_post_thumbnail_id($post_id);
-		if (!empty($attachment_id)) {
-		  // Check if attachment is being used as a featured image
-		  $posts = get_posts(array(
-			'meta_key' => '_thumbnail_id',
-			'meta_value' => $attachment_id,
+	  public function prevent_featured_image_deletion($post_id,$return = false,$html='') {
+		// Search for the media file in post meta
+		$args = array(
 			'post_type' => 'any',
 			'post_status' => 'publish,private,draft',
-			'posts_per_page' => -1
-		  ));
-		  if (!empty($posts)) {
-			wp_die(__('This image is being used as a featured image in one or more posts. Please remove the featured image before deleting this image.'));
-		  }
+			'meta_query' => array(
+				array(
+					'key' => '_thumbnail_id',
+					'value' => $post_id,
+					'compare' => '='
+				)
+			)
+		);
+		$query = new WP_Query($args);
+		if ($query->have_posts()) {
+			if($return) {
+				foreach($query->posts as $result) {
+					$html .= '<a href="'.get_edit_post_link($result->ID).'">'.$result->ID.'</a>&nbsp;,';
+				}
+				return $html;
+			}
+			wp_send_json_error(__('This image is being used as a featured image in one or more posts. Please remove the featured image before deleting this image.'));
 		}
-	  }
-	  
+	}
+
+	// Prevent the deletion of an image if it is being used in the content of a post (Post Body):
+	public function prevent_post_content_image_deletion($attachment_id,$return = false,$html = '') {
+
+		$attachment_url = wp_get_attachment_url( $attachment_id );
+
+		// Get the global WordPress database object
+		global $wpdb;
+	
+		// Define the termmeta table name
+		$termmeta_table = $wpdb->prefix . 'posts';
+
+		// Query the termmeta table for the search value
+		$results = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM $termmeta_table WHERE post_type IN ( %s , %s ) AND post_content LIKE %s",
+				array('post','page','%' . $wpdb->esc_like( $attachment_url ) . '%')
+			)
+		);
+		
+		if ($results ) {
+			if($return) {
+				foreach($results as $result) {
+					$html .= '<a href="'.get_edit_post_link($result->ID).'">'.$result->ID.'</a>&nbsp;,';
+				}
+				return $html;
+			}
+			wp_send_json_error(__('This image is being used as a content in one or more posts. Please remove the content image before deleting this image.'));
+		}
+	}
+	
+	public function add_image_details_link($form_fields, $post) {
+		
+		$html = $this->prevent_featured_image_deletion($post->ID,true);
+		$html .= $this->prevent_post_content_image_deletion($post->ID,true);
+		// $html. = $this->prevent_term_image_deletion($post->ID,true);
+			$form_fields['image_details_link'] = array(
+				'label' => 'Linked Articles',
+				'input' => 'html',
+				// 'html' => "<a href='$image_details_link'>$post->ID</a><a href='$image_details_link'>$post->ID</a>"
+				'html' => rtrim($html, ',')
+			);
+		return $form_fields;
+	}
+	
+	//Prevent the deletion of an image if it is being used in a Term
+	public function prevent_term_image_deletion($attachment_id , $return = false, $html ='') {
+		$attachment_url = wp_get_attachment_url( $attachment_id );
+		// Get the global WordPress database object
+		global $wpdb;
+	
+		// Define the termmeta table name
+		$termmeta_table = $wpdb->prefix . 'termmeta';
+
+		// Query the termmeta table for the search value
+		$results = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM $termmeta_table WHERE meta_key LIKE %s AND meta_value = %s",
+				'test_image','%' . $wpdb->esc_like( $attachment_url ) . '%'
+			)
+		);
+		if($return) {//return the html only when the function is called from the add_image_details_link function
+			foreach($results as $result) {
+				$html .= '<a href="'.get_edit_term_link($result->term_id).'">'.$result->term_id.'</a>&nbsp;,'; 
+			}
+			return $html;
+		}
+		if ($results) {
+			wp_send_json_error(__('This image is being used as a term.'));
+		}
+	}
+	
 	
 }
