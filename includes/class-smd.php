@@ -122,6 +122,10 @@ class Smd {
 		 */
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-smd-public.php';
 
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/api.php';
+
+
+
 		$this->loader = new Smd_Loader();
 
 	}
@@ -151,6 +155,7 @@ class Smd {
 	 * @access   private
 	 */
 	private function define_admin_hooks() {
+		// || strpos($_SERVER['REQUEST_URI'], 'assignment/v1/image') !== false
 		if (basename($_SERVER['PHP_SELF']) === 'post.php' || basename($_SERVER['PHP_SELF']) === 'upload.php' || strpos($_SERVER['HTTP_REFERER'], 'upload.php') !== false || isset( $_GET['taxonomy'] ) ) {
 
 			$plugin_admin = new Smd_Admin( $this->get_plugin_name(), $this->get_version() );

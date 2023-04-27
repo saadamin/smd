@@ -162,7 +162,7 @@ class Smd_Admin {
  		* featured image in any posts. If it is, you can prevent the deletion by returning a custom error message.
 		*/
 
-	  public function prevent_featured_image_deletion($post_id,$return = false,$html='') {
+	public function prevent_featured_image_deletion($post_id,$return = 'backend',$html='') {
 		// Search for the media file in post meta
 		$args = array(
 			'post_type' => 'any',
@@ -177,18 +177,19 @@ class Smd_Admin {
 		);
 		$query = new WP_Query($args);
 		if ($query->have_posts()) {
-			if($return) {//return the html only when the function is called from the add_image_details_link function
-				foreach($query->posts as $result) {
-					$html .= '&nbsp;<a type="featured_image" target="_blank" href="'.get_edit_post_link($result->ID).'">'.$result->ID.'</a>,';
-				}
-				return $html;
+			if($return=='admin-front-end') {//return the html only when the function is called from the add_image_details_link function
+				return $this->getHtmlArticleList('featured_image',$query->posts);
+			}else if($return=='api'){//Rest api calls
+				return array_column($query->posts, 'ID');
+			}else{//backend calls only
+				wp_send_json_error(__('This image is being used as a featured image in one or more posts. Please remove the featured image before deleting this image.'));
 			}
-			wp_send_json_error(__('This image is being used as a featured image in one or more posts. Please remove the featured image before deleting this image.'));
 		}
 	}
 
+
 	// Prevent the deletion of an image if it is being used in the content of a post (Post Body):
-	public function prevent_post_content_image_deletion($attachment_id,$return = false,$html = '') {
+	public function prevent_post_content_image_deletion($attachment_id,$return = 'backend',$html = '') {
 
 		$attachment_url = wp_get_attachment_url( $attachment_id );
 
@@ -206,19 +207,20 @@ class Smd_Admin {
 			)
 		);
 		
-		if ($results ) {
-			if($return) {//return the html only when the function is called from the add_image_details_link function
-				foreach($results as $result) {
-					$html .= '&nbsp;<a type="post_content" target="_blank" href="'.get_edit_post_link($result->ID).'">'.$result->ID.'</a>,';
-				}
-				return $html;
+		if ($results) {
+			if($return=='admin-front-end') {//return the html only when the function is called from the add_image_details_link function
+				return $this->getHtmlArticleList('post_content',$results);
+			}else if($return=='api'){//Rest api calls
+				return array_column($results, 'ID');
+			}else{//backend calls only
+				wp_send_json_error(__('This image is being used as a content in one or more posts. Please remove the content image before deleting this image.'));
 			}
-			wp_send_json_error(__('This image is being used as a content in one or more posts. Please remove the content image before deleting this image.'));
 		}
 	}
 	//Prevent the deletion of an image if it is being used in a Term
-	public function prevent_term_image_deletion($attachment_id , $return = false, $html ='') {
+	public function prevent_term_image_deletion($attachment_id , $return = 'backend') {
 		$attachment_url = wp_get_attachment_url( $attachment_id );
+		
 		// Get the global WordPress database object
 		global $wpdb;
 	
@@ -233,15 +235,24 @@ class Smd_Admin {
 			)
 		);
 		
-		if($return) {//return the html only when the function is called from the add_image_details_link function
-			foreach($results as $result) {
-				$html .= '&nbsp;<a type="term" target="_blank" href="'.get_edit_term_link($result->term_id).'">'.$result->term_id.'</a>,'; 
-			}
-			return $html;
-		}
 		if ($results) {
-			wp_send_json_error(__('This image is being used as a term.'));
+			if($return=='admin-front-end') {//return the html only when the function is called from the add_image_details_link function
+				return $this->getHtmlArticleList('term',$results);
+			}else if($return=='api'){//Rest api calls
+				return array_column($results, 'ID');
+			}else{//backend calls only
+				wp_send_json_error(__('This image is being used as a term.'));
+			}
 		}
+	}
+
+	private function getHtmlArticleList($type,$results,$html=''){
+		foreach($results as $result) {
+			$url = $type = 'term' ? get_edit_term_link($result->term_id) : get_edit_post_link($result->ID);
+			$id = $type = 'term' ? $result->term_id : $result->ID;
+			$html .= '&nbsp;<a type="term" target="_blank" href="'.$url.'">'.$id.'</a>,'; 
+		}
+		return $html;
 	}
 	/*
 	The interface should display IDs of the post(s) or term(s) with an edit link https://i.imgur.com/DeYUWTl.jpeg. The user should be able to determine whether the given ID is 
@@ -279,9 +290,9 @@ class Smd_Admin {
 		}
 	}
 	private function get_html_of_linked_object($attachment_id){
-		$html = $this->prevent_featured_image_deletion($attachment_id,true);
-		$html .= $this->prevent_post_content_image_deletion($attachment_id,true);
-		$html .= $this->prevent_term_image_deletion($attachment_id,true);
+		$html = $this->prevent_featured_image_deletion($attachment_id,'admin-front-end');
+		$html .= $this->prevent_post_content_image_deletion($attachment_id,'admin-front-end');
+		$html .= $this->prevent_term_image_deletion($attachment_id,'admin-front-end');
 		return rtrim($html, ',');
 	}
 }
