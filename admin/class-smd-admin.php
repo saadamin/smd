@@ -97,6 +97,7 @@ class Smd_Admin {
 		 */
 
 		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/smd-admin.js', array( 'jquery' ), $this->version, false );
+		wp_enqueue_script( 'sweet_alert', plugin_dir_url( __FILE__ ) . 'js/sweetalert2@11.js', array( 'jquery' ), 11, false );
 
 	}
 	//This function is used to add a metabox to the category taxonomy
@@ -163,7 +164,7 @@ class Smd_Admin {
 		if ($query->have_posts()) {
 			if($return) {//return the html only when the function is called from the add_image_details_link function
 				foreach($query->posts as $result) {
-					$html .= '&nbsp;<a type="featured_image" href="'.get_edit_post_link($result->ID).'">'.$result->ID.'</a>,';
+					$html .= '&nbsp;<a type="featured_image" target="_blank" href="'.get_edit_post_link($result->ID).'">'.$result->ID.'</a>,';
 				}
 				return $html;
 			}
@@ -193,7 +194,7 @@ class Smd_Admin {
 		if ($results ) {
 			if($return) {//return the html only when the function is called from the add_image_details_link function
 				foreach($results as $result) {
-					$html .= '&nbsp;<a type="post_content" href="'.get_edit_post_link($result->ID).'">'.$result->ID.'</a>,';
+					$html .= '&nbsp;<a type="post_content" target="_blank" href="'.get_edit_post_link($result->ID).'">'.$result->ID.'</a>,';
 				}
 				return $html;
 			}
@@ -216,10 +217,10 @@ class Smd_Admin {
 				'test_image','%' . $wpdb->esc_like( $attachment_url ) . '%'
 			)
 		);
-		$b=$wpdb->last_query;
+		
 		if($return) {//return the html only when the function is called from the add_image_details_link function
 			foreach($results as $result) {
-				$html .= '&nbsp;<a type="term" href="'.get_edit_term_link($result->term_id).'">'.$result->term_id.'</a>,'; 
+				$html .= '&nbsp;<a type="term" target="_blank" href="'.get_edit_term_link($result->term_id).'">'.$result->term_id.'</a>,'; 
 			}
 			return $html;
 		}
@@ -227,6 +228,11 @@ class Smd_Admin {
 			wp_send_json_error(__('This image is being used as a term.'));
 		}
 	}
+	/*
+	The interface should display IDs of the post(s) or term(s) with an edit link https://i.imgur.com/DeYUWTl.jpeg. The user should be able to determine whether the given ID is 
+	for a post or for a term. This message should appear in every place in  WordPress from where images can be deleted, such as the Media List table https://i.imgur.com/WhqWd6D.jpeg, 
+	Media Library Popup https://i.imgur.com/DeYUWTl.jpeg etc.
+	*/
 	public function add_image_details_link($form_fields, $post) {
 		$html = $this->get_html_of_linked_object($post->ID);
 			$form_fields['image_details_link'] = array(
@@ -241,7 +247,11 @@ class Smd_Admin {
 		$columns['image_linked_object'] = 'Linked Object';
 		return $columns;
 	}
-	
+
+	/*
+	In the Media Library Table, add a column named "Attached Objects" https://i.imgur.com/WhqWd6D.jpeg that displays a comma-separated list of IDs (linked to the corresponding edit page).
+	The user should be able to determine whether the given ID is for a post or for a term.
+	*/
 	public function image_linked_object_column_content($column_name, $attachment_id) {
 		if ($column_name == 'image_linked_object') {
 			echo 'Articles<br>'.$this->get_html_of_linked_object($attachment_id);
