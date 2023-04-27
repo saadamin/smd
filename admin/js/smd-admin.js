@@ -2,31 +2,9 @@
 	'use strict';
 
 	/**
-	 * All of the code for your admin-facing JavaScript source
-	 * should reside in this file.
-	 *
-	 * Note: It has been assumed you will write jQuery code here, so the
-	 * $ function reference has been prepared for usage within the scope
-	 * of this function.
-	 *
-	 * This enables you to define handlers, for when the DOM is ready:
-	 *
-	 * $(function() {
-	 *
-	 * });
-	 *
-	 * When the window is loaded:
-	 *
-	 * $( window ).load(function() {
-	 *
-	 * });
-	 *
-	 * ...and/or other possibilities.
-	 *
-	 * Ideally, it is not considered best practise to attach more than a
-	 * single DOM-ready or window-load handler for a particular page.
-	 * Although scripts in the WordPress core, Plugins and Themes may be
-	 * practising this, we should strive to set a better example in our own work.
+	 * I have added this code to prevent delete button from media library and show a alert message
+	 * Javascript will decrease server load because it will check if the image is being used by any post or not rather than 
+	 * it will use already loaded data in the page
 	 */
 
 	  
@@ -41,6 +19,11 @@ document.addEventListener('DOMContentLoaded', function() {
 	  }
 	});
 	smdReplaceDeleteButton();
+	document.addEventListener('click', function(event) {
+		if (event.target.classList.contains('thumbnail')) {
+			smdReplaceDeleteButton();
+		}
+	});
   });
   
   //  default behavior of delete attachment has been changed here by replacing button class
@@ -130,17 +113,17 @@ document.addEventListener('click', function(event) {
 		icon: 'error',
 		title: 'Oops...',
 		html: message,
-		footer: 'You have to delete image references first before deleting this image.<br>Note: default behavior of this button has been changed in smd-admin.js file line number 46.'
+		footer: 'You have to delete image references first before deleting this image.<br>Note: default behavior of this button has been changed in smd-admin.js file line number 51.'
 	  })
     // alert(message);
   }
 });
 
 function smdSelectAnchorElements(event){
-	if(document.querySelectorAll('tr.author-self')){
-		return event.target.parentNode.parentNode.parentNode.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.querySelectorAll('td.image_linked_object.column-image_linked_object a');
-	}else{
+	if(document.querySelectorAll('td.field a').length > 0){
 		return document.querySelectorAll('td.field a');
+	}else{
+		return event.target.parentNode.parentNode.parentNode.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.nextElementSibling.querySelectorAll('td.image_linked_object.column-image_linked_object a');
 	}
 
 }

@@ -100,8 +100,23 @@ class Smd_Admin {
 		wp_enqueue_script( 'sweet_alert', plugin_dir_url( __FILE__ ) . 'js/sweetalert2@11.js', array( 'jquery' ), 11, false );
 
 	}
+	/*
+		To force WordPress to allow only JPG and PNG file uploads ONLY in terms page, you can add the following code
+		CMB2 restriction on file types is NOT working. So, I have to use this code to restrict file types.
+		This code adds the jpg, jpeg, and png file extensions to the list of allowed file types for uploads. 
+		Any other file types will be blocked by WordPress. Note that this only affects uploads made through the terms page; 
+		it does not affect other file uploads on your website. 
+	*/
+	public function force_mime_types( $mimes ) {
+		$mime_types['jpg'] = 'image/jpeg';
+		$mime_types['jpeg'] = 'image/jpeg';
+		$mime_types['png'] = 'image/png';
+		return $mime_types;
+	}
+
 	//This function is used to add a metabox to the category taxonomy
 	public function cmb2_add_metabox() {
+		add_filter('upload_mimes', array($this,'force_mime_types'));  //CMB2 restriction on file types is NOT working. So, I have to use this code to restrict file <types class=""></types>
 
 		$prefix = '_smd_';
 	
@@ -234,16 +249,21 @@ class Smd_Admin {
 	Media Library Popup https://i.imgur.com/DeYUWTl.jpeg etc.
 	*/
 	public function add_image_details_link($form_fields, $post) {
-		$html = $this->get_html_of_linked_object($post->ID);
-			$form_fields['image_details_link'] = array(
-				'label' => 'Linked Articles',
-				'input' => 'html',
-				'html' => $html
-			);
+		//check if the attachment is a jpeg or png image
+		if($post->post_mime_type == 'image/jpeg' || $post->post_mime_type == 'image/png'){
+			$html = $this->get_html_of_linked_object($post->ID);
+			if($html){
+				$form_fields['image_details_link'] = array(
+					'label' => 'Linked Articles',
+					'input' => 'html',
+					'html' => $html
+				);
+			}
+		}
 		return $form_fields;
 	}
 	
-	public 	function add_image_linked_object_column($columns) {
+	public function add_image_linked_object_column($columns) {
 		$columns['image_linked_object'] = 'Linked Object';
 		return $columns;
 	}
@@ -254,7 +274,8 @@ class Smd_Admin {
 	*/
 	public function image_linked_object_column_content($column_name, $attachment_id) {
 		if ($column_name == 'image_linked_object') {
-			echo 'Articles<br>'.$this->get_html_of_linked_object($attachment_id);
+			$list =$this->get_html_of_linked_object($attachment_id);
+			echo $list ? 'Articles<br>'.$list : 'No linked objects';
 		}
 	}
 	private function get_html_of_linked_object($attachment_id){

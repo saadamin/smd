@@ -3,6 +3,10 @@
  * included in this file.
  */
  .smd-prevent-delete{
- 	cursor: not-allowed;
+ 	cursor: not-allowed !important;
  	opacity: 0.5;
  }
+ tr.compat-field-image_details_link span {
+    padding: 0;
+    min-height: auto;
+}
