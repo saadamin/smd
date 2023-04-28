@@ -42,13 +42,20 @@ document.addEventListener('DOMContentLoaded', function() {
 				// Change the class of the delete button element to "smd-prevent-delete" to prevent it from being clicked
 				deleteButton1.classList.replace("delete-attachment", "smd-prevent-delete");
 			}
-			const deleteButton2 = document.querySelector("#delete-action a.submitdelete");
+			// Get the delete button element
+			const deleteButton2 = document.querySelector(".attachment-info .delete-attachment");
 			// Check if the delete button element exists
 			if (deleteButton2) {
 				// Change the class of the delete button element to "smd-prevent-delete" to prevent it from being clicked
-				deleteButton2.classList.replace("submitdelete", "smd-prevent-delete");
-				deleteButton2.removeAttribute('onClick');
-				deleteButton2.removeAttribute('href');
+				deleteButton2.classList.replace("delete-attachment", "smd-prevent-delete");
+			}
+			const deleteButton3 = document.querySelector("#delete-action a.submitdelete");
+			// Check if the delete button element exists
+			if (deleteButton3) {
+				// Change the class of the delete button element to "smd-prevent-delete" to prevent it from being clicked
+				deleteButton3.classList.replace("submitdelete", "smd-prevent-delete");
+				deleteButton3.removeAttribute('onClick');
+				deleteButton3.removeAttribute('href');
 			}
 			}
 		});
