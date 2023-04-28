@@ -20,8 +20,8 @@ document.addEventListener('DOMContentLoaded', function() {
 	});
 	smdReplaceDeleteButton();
 	document.addEventListener('click', function(event) {
-		if (event.target.classList.contains('thumbnail')) {
-			smdReplaceDeleteButton();
+		if (event.target.classList.contains('thumbnail') || event.target.classList.contains('dashicons')) {
+				smdReplaceDeleteButton();
 		}
 	});
   });
@@ -42,7 +42,6 @@ document.addEventListener('DOMContentLoaded', function() {
 				// Change the class of the delete button element to "smd-prevent-delete" to prevent it from being clicked
 				deleteButton1.classList.replace("delete-attachment", "smd-prevent-delete");
 			}
-			// Get the delete button element
 			const deleteButton2 = document.querySelector(".attachment-info .delete-attachment");
 			// Check if the delete button element exists
 			if (deleteButton2) {
