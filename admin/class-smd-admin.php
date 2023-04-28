@@ -162,7 +162,8 @@ class Smd_Admin {
  		* featured image in any posts. If it is, you can prevent the deletion by returning a custom error message.
 		*/
 
-	public function prevent_featured_image_deletion($post_id,$return = 'backend',$html='') {
+	public function prevent_featured_image_deletion($post_id_first,$post=null,$return = 'backend') {
+		$post_id = $post ? $post->ID : $post_id_first ;
 		// Search for the media file in post meta
 		$args = array(
 			'post_type' => 'any',
@@ -182,16 +183,19 @@ class Smd_Admin {
 			}else if($return=='api'){//Rest api calls
 				return array_column($query->posts, 'ID');
 			}else{//backend calls only
-				wp_send_json_error(__('This image is being used as a featured image in one or more posts. Please remove the featured image before deleting this image.'));
+				if(defined('DOING_PHPUNIT')){
+					return false;
+				}
+				wp_send_json_error(__('This image is being used as a featured image in one or more posts with these id '.implode(',',array_column($query->posts, 'ID')).'. Please remove the featured image before deleting this image.'));
 			}
 		}
 	}
 
 
 	// Prevent the deletion of an image if it is being used in the content of a post (Post Body):
-	public function prevent_post_content_image_deletion($attachment_id,$return = 'backend',$html = '') {
+	public function prevent_post_content_image_deletion($attachment_id,$attachment=null,$return = 'backend') {
 
-		$attachment_url = wp_get_attachment_url( $attachment_id );
+		$attachment_url = $attachment ? $attachment->guid : wp_get_attachment_url( $attachment_id ) ;
 
 		// Get the global WordPress database object
 		global $wpdb;
@@ -213,13 +217,27 @@ class Smd_Admin {
 			}else if($return=='api'){//Rest api calls
 				return array_column($results, 'ID');
 			}else{//backend calls only
-				wp_send_json_error(__('This image is being used as a content in one or more posts. Please remove the content image before deleting this image.'));
+				if(defined('DOING_PHPUNIT')){
+					return false;
+				}
+				wp_send_json_error(__('This image is being used as a content in one or more posts with these id '.implode(',',array_column($results, 'ID')).'. Please remove the content image before deleting this image.'));
 			}
+		}
+		return $attachment ? $attachment_id : '';//call from pre_delete_attachment will get attachment_id variable only.
+	}
+	public function check_image_before_deletion($attachment_id,$attachment){
+		$in_featured_image = $this->prevent_featured_image_deletion($attachment_id,$attachment);
+		$in_post_content = $this->prevent_post_content_image_deletion($attachment_id,$attachment);
+		$in_term = $this->prevent_term_image_deletion($attachment_id,$attachment);
+		if (in_array(false, array($in_featured_image, $in_post_content, $in_term), true)) {//Only PHPunit tests will return false
+			return false;
+		} else {
+			return $attachment_id;
 		}
 	}
 	//Prevent the deletion of an image if it is being used in a Term
-	public function prevent_term_image_deletion($attachment_id , $return = 'backend') {
-		$attachment_url = wp_get_attachment_url( $attachment_id );
+	public function prevent_term_image_deletion($attachment_id,$attachment=null,$return = 'backend') {
+		$attachment_url = $attachment ? $attachment->guid : wp_get_attachment_url( $attachment_id ) ;
 		
 		// Get the global WordPress database object
 		global $wpdb;
@@ -230,7 +248,7 @@ class Smd_Admin {
 		// Query the termmeta table for the search value
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT term_id FROM $termmeta_table WHERE meta_key = %s AND meta_value LIKE %s",
+				"SELECT term_id as ID FROM $termmeta_table WHERE meta_key = %s AND meta_value LIKE %s",
 				'test_image','%' . $wpdb->esc_like( $attachment_url ) . '%'
 			)
 		);
@@ -241,15 +259,19 @@ class Smd_Admin {
 			}else if($return=='api'){//Rest api calls
 				return array_column($results, 'ID');
 			}else{//backend calls only
-				wp_send_json_error(__('This image is being used as a term.'));
+				if(defined('DOING_PHPUNIT')){
+					return false;
+				}
+				wp_send_json_error(__('This image is being used as a term in these id '.implode(',',array_column($results, 'ID'))));
 			}
 		}
+		return $attachment ? $attachment_id : '';//call from pre_delete_attachment will get attachment_id variable only.
 	}
 
 	private function getHtmlArticleList($type,$results,$html=''){
 		foreach($results as $result) {
-			$url = $type = 'term' ? get_edit_term_link($result->term_id) : get_edit_post_link($result->ID);
-			$id = $type = 'term' ? $result->term_id : $result->ID;
+			$url = $type == 'term' ? get_edit_term_link($result->ID) : get_edit_post_link($result->ID);
+			$id = $type == 'term' ? $result->ID : $result->ID;
 			$html .= '&nbsp;<a type="term" target="_blank" href="'.$url.'">'.$id.'</a>,'; 
 		}
 		return $html;
@@ -290,9 +312,9 @@ class Smd_Admin {
 		}
 	}
 	private function get_html_of_linked_object($attachment_id){
-		$html = $this->prevent_featured_image_deletion($attachment_id,'admin-front-end');
-		$html .= $this->prevent_post_content_image_deletion($attachment_id,'admin-front-end');
-		$html .= $this->prevent_term_image_deletion($attachment_id,'admin-front-end');
+		$html = $this->prevent_featured_image_deletion($attachment_id,null,'admin-front-end');
+		$html .= $this->prevent_post_content_image_deletion($attachment_id,null,'admin-front-end');
+		$html .= $this->prevent_term_image_deletion($attachment_id,null,'admin-front-end');
 		return rtrim($html, ',');
 	}
 }

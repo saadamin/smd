@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		});
 
 		// Get all <tr> elements with class 'author-self' , this codes are applicable for media library (wp-admin/upload.php?mode=list)
-		const rows = document.querySelectorAll('tr.author-self');
+		const rows = document.querySelectorAll('table.wp-list-table tbody#the-list tr');
 
 		// Loop through all the rows and check if it has a child element with class 'image_linked_object'
 		rows.forEach(row => {

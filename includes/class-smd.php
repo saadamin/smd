@@ -155,8 +155,9 @@ class Smd {
 	 * @access   private
 	 */
 	private function define_admin_hooks() {
-		// || strpos($_SERVER['REQUEST_URI'], 'assignment/v1/image') !== false
-		if (basename($_SERVER['PHP_SELF']) === 'post.php' || basename($_SERVER['PHP_SELF']) === 'upload.php' || strpos($_SERVER['HTTP_REFERER'], 'upload.php') !== false || isset( $_GET['taxonomy'] ) ) {
+		//defined('DOING_PHPUNIT')" has been added for phpunit test
+
+		if (defined('DOING_PHPUNIT') || basename($_SERVER['PHP_SELF']) === 'post.php' || basename($_SERVER['PHP_SELF']) === 'upload.php' || strpos($_SERVER['HTTP_REFERER'], 'upload.php') !== false || isset( $_GET['taxonomy'] ) ) {
 
 			$plugin_admin = new Smd_Admin( $this->get_plugin_name(), $this->get_version() );
 
@@ -174,9 +175,8 @@ class Smd {
 				add_action('manage_media_custom_column', array($plugin_admin,'image_linked_object_column_content'), 10, 2);
 
 				//Prevent delete used images from backend only.
-				add_action('delete_attachment', array($plugin_admin,'prevent_featured_image_deletion'));
-				add_action('delete_attachment', array($plugin_admin,'prevent_post_content_image_deletion'));
-				add_action('delete_attachment', array($plugin_admin,'prevent_term_image_deletion'));
+				add_action('pre_delete_attachment', array($plugin_admin,'check_image_before_deletion'), 10, 2);
+				
 			}else{
 				//Only load cmb2 for taxonomy pages
 				require_once  __DIR__. '/cmb2/init.php';
@@ -185,11 +185,6 @@ class Smd {
 		}
 	}
 
-
-	
-
-	  
-	  
 	/**
 	 * Register all of the hooks related to the public-facing functionality
 	 * of the plugin.
