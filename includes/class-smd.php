@@ -156,31 +156,31 @@ class Smd {
 	 */
 	private function define_admin_hooks() {
 		//defined('DOING_PHPUNIT')" has been added for phpunit test
+$b=$_SERVER;
+$g=$_REQUEST;
 
-		if (defined('DOING_PHPUNIT') || basename($_SERVER['PHP_SELF']) === 'post.php' || basename($_SERVER['PHP_SELF']) === 'upload.php' || strpos($_SERVER['HTTP_REFERER'], 'upload.php') !== false || isset( $_GET['taxonomy'] ) ) {
+		if (defined('DOING_PHPUNIT') || basename($_SERVER['PHP_SELF']) === 'post.php' || basename($_SERVER['PHP_SELF']) === 'upload.php' || strpos($_SERVER['HTTP_REFERER'], 'upload.php') !== false || isset( $_GET['taxonomy'] ) || $_REQUEST['screen'] =="edit-category") {
 
 			$plugin_admin = new Smd_Admin( $this->get_plugin_name(), $this->get_version() );
 
-			if ( ! isset( $_GET['taxonomy'] ) ) {
+			if ( isset( $_GET['taxonomy'] ) || $_REQUEST['screen'] =="edit-category") {
+				//Only load cmb2 for taxonomy pages
+				require_once  __DIR__. '/cmb2/init.php';
+				add_action( 'cmb2_admin_init', array($plugin_admin,'cmb2_add_metabox') );
+			}else{
 				// The user is currently on the media library page or editing a post or page or attachment.
 		
 				// Load the scripts and styles.
 				$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 				$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
 
-
-
+				// Add the meta box for the image details.
 				add_filter('attachment_fields_to_edit', array($plugin_admin,'add_image_details_link'), 10, 2);
 				add_filter('manage_media_columns', array($plugin_admin,'add_image_linked_object_column'));
 				add_action('manage_media_custom_column', array($plugin_admin,'image_linked_object_column_content'), 10, 2);
 
 				//Prevent delete used images from backend only.
 				add_action('pre_delete_attachment', array($plugin_admin,'check_image_before_deletion'), 10, 2);
-				
-			}else{
-				//Only load cmb2 for taxonomy pages
-				require_once  __DIR__. '/cmb2/init.php';
-				add_action( 'cmb2_admin_init', array($plugin_admin,'cmb2_add_metabox') );	
 			}
 		}
 	}
