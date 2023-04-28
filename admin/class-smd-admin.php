@@ -272,7 +272,7 @@ class Smd_Admin {
 		foreach($results as $result) {
 			$url = $type == 'term' ? get_edit_term_link($result->ID) : get_edit_post_link($result->ID);
 			$id = $type == 'term' ? $result->ID : $result->ID;
-			$html .= '&nbsp;<a type="term" target="_blank" href="'.$url.'">'.$id.'</a>,'; 
+			$html .= '&nbsp;<a type="'.$type.'" target="_blank" href="'.$url.'">'.$id.'</a>,'; 
 		}
 		return $html;
 	}
