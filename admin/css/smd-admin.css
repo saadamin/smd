@@ -10,3 +10,13 @@
     padding: 0;
     min-height: auto;
 }
+tr.compat-field-image_details_link td.field {
+    margin-left: -7px;
+    margin-top: 7px;
+}
+tr.compat-field-image_details_link td.field a {
+    margin-left: 10px;
+}
+tr.compat-field-image_details_link {
+    margin-bottom: 10px;
+}
